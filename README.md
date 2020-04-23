@@ -1,4 +1,5 @@
 # Implementation ImGui DirectX9
+[![](https://img.shields.io/github/license/theluc4s/ImGui-DX9-Implementation)](https://raw.githubusercontent.com/theluc4s/ImGui-DX9-Implementation/master/LICENSE)
 
 * [Design goals](https://github.com/theluc4s/ImGui-DX9-Implementation#design-goals)
   * [Single-header integration](https://github.com/theluc4s/ImGui-DX9-Implementation#single-header-integration)
