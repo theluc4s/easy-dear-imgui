@@ -16,7 +16,8 @@ There are several variants for implementing imgui using C++. Each project has it
 The class was built in a single header and is not tied to dependencies, in addition to ImGui and the SDK of directx. You do not need C++17 to use it.
 
 ###### Don't fail:
-One of the main factors that I am solving is the lack of error handling in my class, this can bring headaches. But I am implementing this.
+A simple check using try when creating the object prevents a potential problem. Improvements are being implemented.
+
 ## Examples
 Get the latest ImGui release or download my release that always contains the update for ImGui.
 > The imgui files need to be in a 'imgui' folder and the implementation.hpp outside that folder.
@@ -116,7 +117,7 @@ The following functions are available through the instance of the object of type
 | `void set_style(const style_color&)`   | **Color style of the ImGui using an enum**     |
 | `MSG& get_msg()`   | **Returns a reference to m_msg**     |
 | `const HWND& get_hwnd() const`   | **Returns a reference to m_hwnd**     |
-| `const WNDCLASSEX& get_hwnd() const`   | **Returns a reference to m_window_class**     |
+| `const WNDCLASSEX& get_wnd() const`   | **Returns a reference to m_window_class**     |
 
 ## Special thanks
-Thanks to [Darkratos](https://github.com/Darkratos) and [@Nomade040](https://github.com/Nomade040) by test and point me improvements.
+Thanks to [@Darkratos](https://github.com/Darkratos) and [@Nomade040](https://github.com/Nomade040) by test and point me improvements.
