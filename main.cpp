@@ -4,7 +4,9 @@ int main()
 {
     // Initialize new object of type 'Implement'
     // Window name is required
-    Implementation imgui{ "ImGui DirectX9 Implementation", 800, 600 };
+    Implementation imgui{ "ImGui DirectX9 Implementation", "DX", { 1920, 800 }, { 0, 0 }, Implementation::class_style::SAVEBITS, WS_OVERLAPPEDWINDOW };
+
+    imgui.start_window();
 
     //Example variables
     bool show_demo_window       { true };
@@ -40,7 +42,7 @@ int main()
             ImGui::SliderFloat( "float", &float_slider, 0.0f, 1.0f );     // Edit 1 float using a slider from 0.0f to 1.0f
             ImGui::ColorEdit3( "simple color", reinterpret_cast< float* >( &simple_color ) );   // Edit 3 floats representing a color
             if ( ImGui::Button( "Dark Style Color" ) )
-                imgui.set_style( Implementation::style_color::DARK );
+                imgui.set_style( Implementation::color_style::dark );
             if ( ImGui::Button( "Button" ) )                                // Buttons return true when clicked (most widgets return true when edited/activated)
                 counter++;
             ImGui::SameLine();

@@ -1,6 +1,10 @@
 /*
 - This header is free to use and uses the MIT license.
 
+*********************************************************************************************************
+* This header was developed exclusively for windows, it makes use of at least one function of WinUser.h *
+*********************************************************************************************************
+
 - It was developed based on the main.cpp of the example_win32_directx9 of ImGui.
 
 - It was designed on top of ImGui 1.76 release and there is no guarantee of operation in other previous versions.
@@ -8,7 +12,7 @@
 - It allows the user to create an interface based on Win32 - DirectX9 with ImGui.
 - In a few lines of code and does not require std::c++14 or later for this.
 
-- DirectX10, 11 and 12 but are still supported.
+- DirectX10, 11 and 12 are not supported.
 
 -> Special thanks to github.com/Darkratos and github.com/Nomade040 for their suggestions for improvements.
 
@@ -23,7 +27,7 @@
 
 // DirectX includes
 #include <d3d9.h>
-#include <exception>
+#include <exception> //std::exception
 #include <string> //std::string
 #pragma comment(lib, "d3d9.lib")
 
@@ -34,12 +38,15 @@ static LPDIRECT3DDEVICE9        g_pd3d_device;
 static D3DPRESENT_PARAMETERS    g_d3dpp;
 static LRESULT __stdcall WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+// The reset device is a static function because WindowProc uses it
+static void reset_device();
+
 // Creates and registers a window directly from the constructor.
 class Implementation_Window
 {
 public:
     // Enum class style preset
-    enum class style_class
+    enum class class_style
     {
         VREDRAW = 0x0001,
         HREDRAW = 0x0002,
@@ -53,55 +60,90 @@ public:
         BYTEALIGNWINDOW = 0x2000,
         GLOBALCLASS = 0x4000
     };
+
 protected:
+    //x and y for pos or size
+    struct vector2
+    {
+        int x;
+        int y;
+    };
+
     // If a m_hwnd is not nullptr then CreateWindowA has returned success and we have a window.
-    HWND        m_hwnd          {};
+    HWND        m_hwnd           {};
     // If m_wnd_class is not nullptr, then our window structure provided by user parameters has been generated.
-    WNDCLASSEX  m_window_class  {};
+    WNDCLASSEX  m_window_class   {};
+
+    // Defines the class name and the window name.
+    std::string m_window_name    {};
+    std::string m_class_name     {};
+
+    // Saves the window size and startup position.
+    vector2 m_size               {};
+    vector2 m_pos                {};
+
+    // Class of our window.
+    class_style m_class_style    {};
+
+    // Style of our window.
+    unsigned long m_window_style {};
 
     // Builder will provide the necessary arguments for creating our window class and then the window.
     // If CreateWindowA fails then m_hwnd will be nullptr.
-    Implementation_Window( const std::string& window_name,
-                           const int width, const int heigth,
-                           const style_class& class_style,
-                           const std::string& class_name,
-                           const int initial_pos_x, const int initial_pos_y ) : 
-           m_window_class{ sizeof( WNDCLASSEX ),
-                           static_cast< unsigned int >( class_style ),
-                           WndProc,
-                           0,
-                           0,
-                           GetModuleHandleA( nullptr ),
-                           nullptr, nullptr, nullptr, nullptr,
-                           class_name.c_str(),
-                           nullptr }
-    {
-        RegisterClassExA        ( &m_window_class );
-        m_hwnd = CreateWindowExA( 0LU,
-                                  m_window_class.lpszClassName,
-                                  window_name.c_str(),
-                                  WS_OVERLAPPEDWINDOW,
-                                  initial_pos_x, initial_pos_y,
-                                  width, heigth,
-                                  nullptr, nullptr,
-                                  m_window_class.hInstance,
-                                  nullptr );
-    }
+    Implementation_Window( const std::string &window_name,
+                           const std::string &class_name,
+                           vector2 size,
+                           vector2 pos,
+                           const class_style &cs,
+                           unsigned long ws ) :
+        m_hwnd {},
+        m_window_class {},
+        m_window_name { window_name },
+        m_class_name { class_name },
+        m_size { size },
+        m_pos { pos },
+        m_class_style { cs },
+        m_window_style { ws }
+    {}
 
     // The destructor will destroy our window, invalidating m_hwnd and unregistering the window.
     ~Implementation_Window()
     {
-        DestroyWindow   ( m_hwnd                                                 );
-        UnregisterClassA( m_window_class.lpszClassName, m_window_class.hInstance );
+        DestroyWindow    ( m_hwnd );
+        UnregisterClassA ( m_window_class.lpszClassName, m_window_class.hInstance );
     }
 public:
     // No builders available to create a new object of type
-    Implementation_Window( const Implementation_Window& )               = delete;
-    Implementation_Window& operator=( const Implementation_Window& )    = delete;
+    Implementation_Window ( const Implementation_Window& )           = delete;
+    Implementation_Window& operator=( const Implementation_Window& ) = delete;
 
-    // Const references return to m_hwnd and m_wnd_class that can only be accessed.
-    const HWND&         get_hwnd()  const { return m_hwnd;          }
-    const WNDCLASSEX&   get_wnd()   const { return m_window_class;  }
+    // Const references return to variables that can only be accessed.
+    const HWND&         get_hwnd()           const { return m_hwnd; }
+    const WNDCLASSEX&   get_wnd_class()      const { return m_window_class; }
+    const std::string&  get_name()           const { return m_window_name; }
+    const std::string&  get_class_name()     const { return m_class_name; }
+    const vector2&      get_size()           const { return m_size; }
+    const vector2&      get_pos()            const { return m_pos; }
+    const class_style&  get_class_style()    const { return m_class_style; }
+    const unsigned long get_wnd_style()      const { return m_window_style; }
+    const vector2       get_max_resolution() const
+    {
+        const HWND h_wnd { GetDesktopWindow() };
+
+        RECT lp_rect{};
+
+        GetWindowRect( h_wnd, &lp_rect );
+
+        return { static_cast< int >( lp_rect.right ), static_cast< int >( lp_rect.bottom ) };
+    }
+
+    // The functions below allow you to edit members individually.
+    void set_name       ( std::string name )       { m_window_name = name; }
+    void set_class_name ( std::string class_name ) { m_class_name = class_name; }
+    void set_size       ( vector2 init_wnd_size )  { m_size = init_wnd_size; }
+    void set_pos        ( vector2 init_wnd_pos )   { m_pos = init_wnd_pos; }
+    void set_class_style( class_style cs )         { m_class_style = cs; }
+    void set_wnd_style  ( unsigned long wnd_style ){ m_window_style = wnd_style; }
 };
 
 // It has device controland directx functions.
@@ -146,40 +188,20 @@ protected:
         return true;
     }
 
-    // The builder is responsible for calling the "Implementation_Window" builder that will create a window.
-    Implementation_Render( const std::string& window_name,
-                           const int width, const int heigth,
-                           const style_class& class_style,
-                           const std::string& class_name,
-                           const int initial_pos_x, const int initial_pos_y ) :
+    // The builder is responsible for calling the "Implementation_Window" builder.
+    Implementation_Render( const std::string &window_name,
+                           const std::string &class_name,
+                           vector2 size,
+                           vector2 pos,
+                           const class_style &cs,
+                           unsigned long ws ) :
     Implementation_Window( window_name,
-                           width, heigth,
-                           class_style,
                            class_name,
-                           initial_pos_x, initial_pos_y)
-    {
-        try
-        {
-            // Then the device is created and the window updated.
-            // If create_window_d3d fails then the device is cleared.
-            if ( !create_device_d3d() )
-            {
-                clear_device_d3d();
-                throw std::exception("Create device D3D failed!");
-            }
-        }
-        catch ( const std::exception &e )
-        {
-            MessageBoxA(m_hwnd, e.what(), "Exception", MB_ABORTRETRYIGNORE | MB_ICONSTOP);
-            #if defined _DEBUG
-                __debugbreak();
-            #else
-                exit(0);
-            #endif
-        }
-        ShowWindow  ( m_hwnd, SW_SHOWDEFAULT );
-        UpdateWindow( m_hwnd                 );
-    }
+                           size,
+                           pos,
+                           cs,
+                           ws )
+    {}
 
     // Clear device
     ~Implementation_Render()
@@ -190,27 +212,22 @@ public:
     //No builders available to create a new object of type
     Implementation_Render( const Implementation_Render& )               = delete;
     Implementation_Render& operator=( const Implementation_Render& )    = delete;
-
-    // The reset device is a static function because WindowProc uses it
-    static void reset_device();
 };
 
-//const std::string& window_name
-//const int width = 1280
-//const int heigth = 800
-//const style_class& class_style = style_class::CLASSDC
-//const std::string& class_name = "ImGui Basic Setup"
-//const int initial_x = 10
-//const int initial_y = 10
+//std::string &window_name
+//std::string &class_name = "ImGui Basic Setup"
+//vector2 size { int x, int y } = { 1280, 800 }
+//vector2 pos  { int x, int y } = { 0, 0 }
+//style_class &class_style = style_class::CLASSDC
 class Implementation final : public Implementation_Render
 {
 public:
     //Enum Imgui preset set color style
-    enum class style_color
+    enum class color_style
     {
-        CLASSIC,
-        DARK,
-        LIGHT
+        classic,
+        dark,
+        light
     };
 private:
     // MSG struct to while loop main.cpp
@@ -220,7 +237,7 @@ private:
     void setup_imgui_context()
     {
         ImGui::CreateContext();
-        set_style( style_color::CLASSIC );
+        set_style( color_style::classic );
     }
 
     // Implements Win32 and DirectX
@@ -232,34 +249,20 @@ private:
     }
 public:
     //window_name is required.
-    Implementation( const std::string& window_name,
-                    const int width = 1280, const int heigth = 800,
-                    const style_class& class_style = style_class::CLASSDC,
-                    const std::string& class_name = "ImGui Basic Setup",
-                    const int initial_pos_x = 10, const int initial_pos_y = 10 ) :
-    Implementation_Render( window_name,
-                           width, heigth,
-                           class_style,
+    Implementation( const std::string &window_name,
+                    const std::string &class_name = "ImGui DX9 Implementation",
+                    vector2 size = { 1280, 800 },
+                    vector2 pos = { 0, 0 },
+                    const class_style &cs = class_style::CLASSDC,
+                    unsigned long ws = WS_OVERLAPPEDWINDOW ) :
+        Implementation_Render( window_name,
                            class_name,
-                           initial_pos_x, initial_pos_y )
-    {
-        try
-        {
-            // Initializes the context of imgui and sets the color style to classic.
-            setup_imgui_context();
-            setup_imgui_impl();
-        }
-        catch ( const std::exception& e )
-        {
-            MessageBoxA( m_hwnd, e.what(), "Exception", MB_ABORTRETRYIGNORE | MB_ICONSTOP );
-            #if defined _DEBUG
-                __debugbreak();
-            #else
-                exit(0);
-            #endif
-        }
-        memset(&m_msg, 0, sizeof(m_msg));
-    }
+                           size,
+                           pos,
+                           cs,
+                           ws ),
+        m_msg {}
+    {}
 
     // ImGui Destroy
     ~Implementation()
@@ -270,17 +273,17 @@ public:
     }
 
     // Toggles color style simply by making a call and passing a member of the enum style_color
-    void set_style( const style_color& style ) const
+    void set_style( const color_style& style ) const
     {
         switch ( style )
         {
-        case style_color::CLASSIC:
+        case color_style::classic:
             ImGui::StyleColorsClassic();
             break;
-        case style_color::DARK:
+        case color_style::dark:
             ImGui::StyleColorsDark();
             break;
-        case style_color::LIGHT:
+        case color_style::light:
             ImGui::StyleColorsLight();
             break;
         default:
@@ -328,10 +331,93 @@ public:
     // Returns a reference to our variable m_msg;
     // get_msg().message for example.
     MSG& get_msg() { return m_msg; }
+
+     void start_window()
+     {
+        // Get current resolution of desktop
+        vector2 desktop { get_max_resolution() };
+
+        try
+        {
+           if ( desktop.x < m_size.x || desktop.y < m_size.y )
+                throw std::exception( "Higher resolution than the resolution supported by the monitor.!" );
+        }
+        catch ( const std::exception &e )
+        {
+           MessageBoxA( m_hwnd, e.what(), "Exception", MB_ABORTRETRYIGNORE | MB_ICONSTOP );
+
+           #if defined _DEBUG
+               __debugbreak();
+           #endif
+
+           exit(0);
+        }
+
+        m_window_class = { sizeof( WNDCLASSEX ),
+                           static_cast< unsigned int >( m_class_style ),
+                           WndProc,
+                           0, 0,
+                           GetModuleHandleA( nullptr ),
+                           nullptr, nullptr, nullptr, nullptr,
+                           m_class_name.c_str(),
+                           nullptr };
+
+        RegisterClassExA ( &m_window_class );
+
+        m_hwnd = CreateWindowExA( 0UL,
+                                  m_window_class.lpszClassName,
+                                  m_window_name.c_str(),
+                                  m_window_style,
+                                  m_pos.x, m_pos.y,
+                                  m_size.x, m_size.y,
+                                  nullptr, nullptr,
+                                  m_window_class.hInstance,
+                                  nullptr );
+        try
+        {
+           // Then the device is created and the window updated.
+           // If create_window_d3d fails then the device is cleared.
+           if ( !create_device_d3d() )
+           {
+               clear_device_d3d();
+               throw std::exception( "Create device D3D failed!" );
+           }
+        }
+        catch ( const std::exception &e )
+        {
+           MessageBoxA( m_hwnd, e.what(), "Exception", MB_ABORTRETRYIGNORE | MB_ICONSTOP );
+
+           #if defined _DEBUG
+               __debugbreak();
+           #endif
+
+           exit(0);
+        }
+
+        ShowWindow  ( m_hwnd, SW_SHOWDEFAULT );
+        UpdateWindow( m_hwnd );
+
+        try
+        {
+            // Initializes the context of imgui and sets the color style to classic.
+            setup_imgui_context();
+            setup_imgui_impl();
+        }
+        catch ( const std::exception& e )
+        {
+            MessageBoxA( m_hwnd, e.what(), "Exception", MB_ABORTRETRYIGNORE | MB_ICONSTOP );
+
+            #if defined _DEBUG
+                __debugbreak();
+            #endif
+
+            exit(0);
+        }
+     }
 };
 
 // Reset the device
-void Implementation_Render::reset_device()
+void reset_device()
 {
     ImGui_ImplDX9_InvalidateDeviceObjects();
     HRESULT hr = g_pd3d_device->Reset( &g_d3dpp );
@@ -352,7 +438,7 @@ LRESULT __stdcall WndProc( HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam )
         {
             g_d3dpp.BackBufferWidth =   LOWORD ( lParam );
             g_d3dpp.BackBufferHeight =  HIWORD ( lParam );
-            Implementation_Render::reset_device();
+            reset_device();
         }
         return 0;
     case WM_SYSCOMMAND:
