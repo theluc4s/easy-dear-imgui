@@ -1,0 +1,56 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="dear_imgui\imgui.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dear_imgui\imgui_demo.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dear_imgui\imgui_draw.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dear_imgui\imgui_impl_dx9.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dear_imgui\imgui_impl_win32.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="dear_imgui\imgui_widgets.cpp">
+      <Filter>dear_imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="easy_dear_imgui.hpp" />
+    <ClInclude Include="dear_imgui\imconfig.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imgui.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imgui_impl_dx9.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imgui_impl_win32.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imgui_internal.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imstb_rectpack.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imstb_textedit.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="dear_imgui\imstb_truetype.h">
+      <Filter>dear_imgui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="dear_imgui">
+      <UniqueIdentifier>{e1085f5e-1d90-49b8-8c22-37e8dbdc620b}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
