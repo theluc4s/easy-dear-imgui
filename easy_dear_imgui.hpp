@@ -122,14 +122,16 @@ namespace easy_di
 			const std::string &window_name,                             //Window name
 			const std::string &class_name,                              //Window class name
 			const vec2 &window_pos,                                     //Window start position
-			const vec2 &window_size                                     //Window start size
+			const vec2 &window_size,                                    //Window start size
+			const uint32_t class_style,
+			const uint32_t window_style
 		) :
 			m_hwnd{ nullptr }
 		{
 			this->m_window_class =
 			{
 				sizeof WNDCLASSEX,                                      //Class size
-				CS_CLASSDC,                                             //0x0040 - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
+				class_style,                                             //0x0040 - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
 				dx::g_cwnd_proc ? dx::g_cwnd_proc : dx::wnd_proc,       //Customizable or current window procedure
 				0,
 				0,
@@ -149,7 +151,7 @@ namespace easy_di
 					0,                                                 //WS_EX_RIGHTSCROLLBAR - https://docs.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
 					m_window_class.lpszClassName,                      //Window class name
 					window_name.data(),                                //Window name
-					WS_OVERLAPPEDWINDOW,                               //WS_OVERLAPPEDWINDOW - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
+					window_style,                                      //WS_OVERLAPPEDWINDOW - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
 					window_pos.m_x,                                    //Window start position X
 					window_pos.m_y,                                    //Window start position Y
 					window_size.m_x,                                   //Window size X
@@ -250,7 +252,9 @@ namespace easy_di
 			const std::string &window_name,
 			const std::string &class_name,
 			const vec2 &window_pos,
-			const vec2 &window_size,
+			const vec2 &window_size, 
+			const uint32_t class_style,
+			const uint32_t window_style,
 			const bool vsync
 		) :
 			impl_window
@@ -258,7 +262,9 @@ namespace easy_di
 			window_name,
 			class_name,
 			window_pos,
-			window_size
+			window_size,
+			class_style,
+			window_style
 		},
 			m_vsync{ vsync }
 		{
@@ -345,6 +351,8 @@ namespace easy_di
 			const std::string &class_name,
 			const vec2 &window_pos,
 			const vec2 &window_size,
+			const uint32_t class_style = CS_CLASSDC,
+			const uint32_t window_style = WS_OVERLAPPEDWINDOW,
 			const bool vsync = true
 		) :
 			impl_imgui
@@ -352,7 +360,10 @@ namespace easy_di
 				window_name,
 				class_name,
 				window_pos,
-				window_size, vsync
+				window_size,
+				class_style,
+				window_style,
+				vsync
 			},
 			m_msg{ 0 }
 		{
