@@ -1,13 +1,13 @@
 # Easy Dear ImGui
-[![](https://img.shields.io/github/license/theluc4s/Easy-Dear-ImGui.svg)](https://raw.githubusercontent.com/theluc4s/Easy-Dear-ImGui/master/LICENSE) [![](https://img.shields.io/badge/release-last-green.svg)](https://github.com/theluc4s/Easy-Dear-ImGui/releases)
+[![](https://img.shields.io/github/license/theluc4s/easy-dear-imgui.svg)](https://raw.githubusercontent.com/theluc4s/easy-dear-imgui/master/LICENSE) [![](https://img.shields.io/badge/release-last-green.svg)](https://github.com/theluc4s/easy-dear-imgui/releases)
 
-* [Design goals](https://github.com/theluc4s/Easy-Dear-ImGui#design-goals)
-  * [Single-header integration](https://github.com/theluc4s/Easy-Dear-ImGui#single-header-integration)
-  * [Don't fail](https://github.com/theluc4s/Easy-Dear-ImGui#dont-fail)
-* [Examples](https://github.com/theluc4s/Easy-Dear-ImGui#examples)
-  * [Visual Studio 2019](https://github.com/theluc4s/Easy-Dear-ImGui#visual-studio-2019)
-* [User functions](https://github.com/theluc4s/Easy-Dear-ImGui#user-functions)
-* [Special thanks](https://github.com/theluc4s/Easy-Dear-ImGui#special-thanks)
+* [Design goals](https://github.com/theluc4s/easy-dear-imgui#design-goals)
+  * [Single-header integration](https://github.com/theluc4s/easy-dear-imgui#single-header-integration)
+  * [Don't fail](https://github.com/theluc4s/easy-dear-imgui#dont-fail)
+* [Examples](https://github.com/theluc4s/easy-dear-imgui#examples)
+  * [Visual Studio 2019](https://github.com/theluc4s/easy-dear-imgui#visual-studio-2019)
+* [User functions](https://github.com/theluc4s/easy-dear-imgui#user-functions)
+* [Special thanks](https://github.com/theluc4s/easy-dear-imgui#special-thanks)
 
 ## Design goals
 There are several variants for implementing dear imgui using C++. Each project has its implementation. My class has the following goals:
@@ -38,11 +38,11 @@ int __stdcall WinMain(
 	//Use the easy_di namespace
 	easy_di::window window
 	{
-		"My Window",	//Window name
-		"my_window",	//Class window name
-		{ 0, 0 },		//Start position window
-		{ 200, 100 },	//Start size window
-		true			//Vertical sincronization, default value is 'true'
+		"My Window",    //Window name
+		"my_window",    //Class window name
+		{ 0, 0 },       //Start position window
+		{ 1280, 720 },  //Start size window
+		true            //Vertical sincronization, default value is 'true'
 	};
 
 	//If process_message() returns false, the message was equal to WM_QUIT or CreateWindowExA failed and returned a nullptr handle.
@@ -61,6 +61,8 @@ int __stdcall WinMain(
 	return 0;
 }
 ```
+#### Screenshot
+![](https://raw.githubusercontent.com/theluc4s/easy-dear-imgui/master/easy-dear-imgui.gif)
 
 #### Custom window procedure template
 If you want to use a custom window procedure, use the template below and write your own.
