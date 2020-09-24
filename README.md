@@ -38,11 +38,13 @@ int __stdcall WinMain(
 	//Use the easy_di namespace
 	easy_di::window window
 	{
-		"My Window",    //Window name
-		"my_window",    //Class window name
-		{ 0, 0 },       //Start position window
-		{ 1280, 720 },  //Start size window
-		true            //Vertical sincronization, default value is 'true'
+		"My Window",         //Window name
+		"my_window",         //Class window name
+		{ 0, 0 },            //Start position window
+		{ 1280, 720 },       //Start size window
+		CS_CLASSDC,          //Window class style
+		WS_OVERLAPPEDWINDOW, //Window style
+		true                 //Vertical sincronization, default value is 'true'
 	};
 
 	//If process_message() returns false, the message was equal to WM_QUIT or CreateWindowExA failed and returned a nullptr handle.

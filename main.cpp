@@ -13,7 +13,7 @@ int __stdcall WinMain(
 		"My Window",         //Window name
 		"my_window",         //Class window name
 		{ 0, 0 },            //Start position window
-		{ 200, 100 },        //Start size window
+		{ 1280, 720 },       //Start size window
 		CS_CLASSDC,          //Window class style
 		WS_OVERLAPPEDWINDOW, //Window style
 		true                 //Vertical sincronization, default value is 'true'
