@@ -271,12 +271,14 @@ namespace easy_di
 
 		~impl_imgui()
 		{
-			ImGui_ImplDX9_Shutdown();
-			ImGui_ImplWin32_Shutdown();
-
 			//ImGui does not check if the context is valid when cleaning, so it will try to access memory on a null pointer.
 			if ( ImGui::GetCurrentContext() )
+			{
+				ImGui_ImplDX9_Shutdown();
+				ImGui_ImplWin32_Shutdown();
+
 				ImGui::DestroyContext();
+			}
 
 			clear_device();
 		}
