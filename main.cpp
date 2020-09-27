@@ -1,5 +1,6 @@
 #include "easy_dear_imgui.hpp"
 
+
 int __stdcall WinMain(
 	_In_ HINSTANCE,
 	_In_opt_ HINSTANCE,
@@ -7,16 +8,17 @@ int __stdcall WinMain(
 	_In_ int
 )
 {
-	//Use the easy_di namespace
+	// Use the easy_di namespace
+	//
 	easy_di::window window
 	{
-		"My Window",         //Window name
-		"my_window",         //Class window name
-		{ 0, 0 },            //Start position window
-		{ 1280, 720 },       //Start size window
-		CS_CLASSDC,          //Window class style
-		WS_OVERLAPPEDWINDOW, //Window style
-		true                 //Vertical sincronization, default value is 'true'
+		"My Window",         // Window name
+		"my_window",         // Class window name
+		{ 0, 0 },            // Start position window
+		{ 1280, 720 },       // Start size window
+		CS_CLASSDC,          // Window class style      ( default parameter )
+		WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
+		true                 // Vertical sincronization ( default parameter )
 	};
 
 	while ( window.process_message() )
