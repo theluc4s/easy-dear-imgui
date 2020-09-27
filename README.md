@@ -35,16 +35,17 @@ int __stdcall WinMain(
 	_In_ int
 )
 {
-	//Use the easy_di namespace
+	// Use the easy_di namespace
+	//
 	easy_di::window window
 	{
-		"My Window",         //Window name
-		"my_window",         //Class window name
-		{ 0, 0 },            //Start position window
-		{ 1280, 720 },       //Start size window
-		CS_CLASSDC,          //Window class style
-		WS_OVERLAPPEDWINDOW, //Window style
-		true                 //Vertical sincronization, default value is 'true'
+		"My Window",         // Window name
+		"my_window",         // Class window name
+		{ 0, 0 },            // Start position window
+		{ 1280, 720 },       // Start size window
+		CS_CLASSDC,          // Window class style      ( default parameter )
+		WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
+		true                 // Vertical sincronization ( default parameter )
 	};
 
 	//If process_message() returns false, the message was equal to WM_QUIT or CreateWindowExA failed and returned a nullptr handle.
@@ -79,6 +80,9 @@ LRESULT __stdcall custom_wnd_procedure( HWND hwnd, UINT msg, WPARAM w_param, LPA
 	case WM_DESTROY:
 		PostQuitMessage( 0 );
 		return 0;
+	case WM_CLOSE:
+		DestroyWindow( hwnd );
+		return 0;
 	case WM_SIZE:
 		if ( easy_di::dx::g_ptr_d3d_device && ( w_param != SIZE_MINIMIZED ) )
 		{
@@ -100,13 +104,15 @@ Then just define g_cwnd_proc before creating the object.
 easy_di::dx::g_cwnd_proc = custom_wnd_procedure;
 //create the object
 easy_di::window window
-	{
-		"My Window",    //Window name
-		"my_window",    //Class window name
-		{ 0, 0 },       //Start position window
-		{ 200, 100 },   //Start size window
-		true            //Vertical sincronization, default value is 'true'
-	};
+{
+	"My Window",         // Window name
+	"my_window",         // Class window name
+	{ 0, 0 },            // Start position window
+	{ 1280, 720 },       // Start size window
+	CS_CLASSDC,          // Window class style      ( default parameter )
+	WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
+	true                 // Vertical sincronization ( default parameter )
+};
 ```
 
 
