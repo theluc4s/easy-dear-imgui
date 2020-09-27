@@ -4,7 +4,9 @@
 #include "dear_imgui/imgui_impl_win32.h"
 
 #include <d3d9.h>
+#include <memory>
 #include <string>
+#include <system_error>
 #include <Windows.h>
 
 #pragma comment( lib, "d3d9.lib" )
@@ -14,6 +16,31 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler( HWND hWnd, UINT ms
 namespace easy_di
 {
 #define TraceLog(format, ...) TraceLogImpl( __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__)
+	std::string get_last_error_as_string( const int error_code )
+	{
+		char *buffer{ nullptr };
+		const auto msg = FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+										 nullptr, // (not used with FORMAT_MESSAGE_FROM_SYSTEM)
+										 error_code,
+										 MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+										 reinterpret_cast< LPTSTR >( &buffer ),
+										 0,
+										 nullptr );
+		if ( msg > 0 )
+		{
+			// Assign buffer to smart pointer with custom deleter so that memory gets released
+			// in case String's c'tor throws an exception.
+			auto deleter = []( void *p ) { LocalFree( p ); };
+			std::unique_ptr<char, decltype( deleter )> ptrBuffer( buffer, deleter );
+			return std::string( ptrBuffer.get(), msg );
+		}
+		else
+		{
+			auto error_code{ GetLastError() };
+			return std::system_error( error_code, std::system_category(),
+									  "Failed to retrieve error message string.\n" ).what();
+		}
+	}
 
 	void TraceLogImpl( const char *file_name, const int line, const char *func_sig, const char *format, ... )
 	{
@@ -23,12 +50,18 @@ namespace easy_di
 		//https://docs.microsoft.com/en-us/cpp/build/reference/fc-full-path-of-source-code-file-in-diagnostics?view=vs-2019
 		//[10] File: dummy.cpp
 		//[10] Func: dummy_foo
+		//[10] GetLastError: [0] - The operation completed successfully.
 		//[10] Reason: nullptr argument
 
-		sprintf_s( buffer, "[%d] File: %s\n[%d] Func: %s\n[%d] Reason: ",
+		const auto error_code{ GetLastError() };
+		const auto format_msg{ get_last_error_as_string( error_code ) };
+
+		sprintf_s( buffer, "[%d] File: %s\n[%d] Func: %s\n[%d] GetLastError: [%d] - %s[%d] Reason: ",
 				   line, file_name,
 				   line, func_sig,
+				   line, error_code, format_msg.data(),
 				   line );
+
 		OutputDebugStringA( buffer );
 
 		//retrieve the variable arguments
@@ -98,6 +131,9 @@ namespace easy_di
 			case WM_DESTROY:
 				PostQuitMessage( 0 );
 				return 0;
+			case WM_CLOSE:
+				DestroyWindow( hwnd );
+				return 0;
 			case WM_SIZE:
 				if ( g_ptr_d3d_device && ( w_param != SIZE_MINIMIZED ) )
 				{
@@ -116,31 +152,35 @@ namespace easy_di
 	protected:
 		HWND        m_hwnd;
 		WNDCLASSEX  m_window_class;
+		std::string m_window_name;
+		std::string m_class_name;
 
 		impl_window
 		(
-			const std::string &window_name,                             //Window name
-			const std::string &class_name,                              //Window class name
-			const vec2 &window_pos,                                     //Window start position
-			const vec2 &window_size,                                    //Window start size
+			const std::string &window_name,                             // Window name
+			const std::string &class_name,                              // Window class name
+			const vec2 &window_pos,                                     // Window start position
+			const vec2 &window_size,                                    // Window start size
 			const uint32_t class_style,
 			const uint32_t window_style
 		) :
-			m_hwnd{ nullptr }
+			m_hwnd{ nullptr },
+			m_window_name{ window_name },
+			m_class_name{ class_name }
 		{
 			this->m_window_class =
 			{
-				sizeof WNDCLASSEX,                                      //Class size
-				class_style,                                             //0x0040 - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
-				dx::g_cwnd_proc ? dx::g_cwnd_proc : dx::wnd_proc,       //Customizable or current window procedure
+				sizeof WNDCLASSEX,                                      // Class size
+				class_style,                                            // 0x0040 - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-class-styles
+				dx::g_cwnd_proc ? dx::g_cwnd_proc : dx::wnd_proc,       // Customizable or current window procedure
 				0,
 				0,
-				GetModuleHandleA( nullptr ),                            //Should be equivalent to the instance passed into WinMain
+				GetModuleHandleA( nullptr ),                            // Should be equivalent to the instance passed into WinMain
 				nullptr,
 				nullptr,
 				nullptr,
 				nullptr,
-				class_name.data(),                                      //Window class name
+				m_class_name.data(),                                    // Window class name
 				nullptr
 			};
 
@@ -148,17 +188,17 @@ namespace easy_di
 			{
 				this->m_hwnd = CreateWindowExA
 				(
-					0,                                                 //WS_EX_RIGHTSCROLLBAR - https://docs.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
-					m_window_class.lpszClassName,                      //Window class name
-					window_name.data(),                                //Window name
-					window_style,                                      //WS_OVERLAPPEDWINDOW - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
-					window_pos.m_x,                                    //Window start position X
-					window_pos.m_y,                                    //Window start position Y
-					window_size.m_x,                                   //Window size X
-					window_size.m_y,                                   //Window size Y
+					0,                                                  // WS_EX_RIGHTSCROLLBAR - https://docs.microsoft.com/en-us/windows/win32/winmsg/extended-window-styles
+					m_window_class.lpszClassName,                       // Window class name
+					m_window_name.data(),                               // Window name
+					window_style,                                       // WS_OVERLAPPEDWINDOW - https://docs.microsoft.com/en-us/windows/win32/winmsg/window-styles
+					window_pos.m_x,                                     // Window start position X
+					window_pos.m_y,                                     // Window start position Y
+					window_size.m_x,                                    // Window size X
+					window_size.m_y,                                    // Window size Y
 					nullptr,
 					nullptr,
-					this->m_window_class.hInstance,                    //A handle to the instance of the module to be associated with the window.
+					this->m_window_class.hInstance,                     // A handle to the instance of the module to be associated with the window.
 					nullptr
 				);
 
@@ -170,10 +210,8 @@ namespace easy_di
 		}
 		~impl_window()
 		{
-			if ( this->m_hwnd )
-				DestroyWindow( this->m_hwnd );
-
-			UnregisterClassA( this->m_window_class.lpszClassName, this->m_window_class.hInstance );
+			if( !UnregisterClassA( this->m_window_class.lpszClassName, this->m_window_class.hInstance ) )
+				TraceLog( "UnregisterClassA returned 0!" );
 
 			this->m_hwnd = nullptr;
 			this->m_window_class = { 0 };
@@ -252,7 +290,7 @@ namespace easy_di
 			const std::string &window_name,
 			const std::string &class_name,
 			const vec2 &window_pos,
-			const vec2 &window_size, 
+			const vec2 &window_size,
 			const uint32_t class_style,
 			const uint32_t window_style,
 			const bool vsync
@@ -277,7 +315,8 @@ namespace easy_di
 
 		~impl_imgui()
 		{
-			//ImGui does not check if the context is valid when cleaning, so it will try to access memory on a null pointer.
+			// ImGui does not check if the context is valid when cleaning, so it will try to access memory on a null pointer.
+			//
 			if ( ImGui::GetCurrentContext() )
 			{
 				ImGui_ImplDX9_Shutdown();
@@ -356,15 +395,15 @@ namespace easy_di
 			const bool vsync = true
 		) :
 			impl_imgui
-			{
-				window_name,
-				class_name,
-				window_pos,
-				window_size,
-				class_style,
-				window_style,
-				vsync
-			},
+		{
+			window_name,
+			class_name,
+			window_pos,
+			window_size,
+			class_style,
+			window_style,
+			vsync
+		},
 			m_msg{ 0 }
 		{
 			ShowWindow( this->m_hwnd, SW_SHOWMAXIMIZED );
