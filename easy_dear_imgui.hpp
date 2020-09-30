@@ -30,7 +30,7 @@ namespace easy_di
 		{
 			// Assign buffer to smart pointer with custom deleter so that memory gets released
 			// in case String's c'tor throws an exception.
-			auto deleter = []( void *p ) { LocalFree( p ); };
+			auto deleter = [] ( void *p ) { LocalFree( p ); };
 			std::unique_ptr<char, decltype( deleter )> ptrBuffer( buffer, deleter );
 			return std::string( ptrBuffer.get(), msg );
 		}
@@ -137,7 +137,7 @@ namespace easy_di
 			case WM_SIZE:
 				if ( g_ptr_d3d_device && ( w_param != SIZE_MINIMIZED ) )
 				{
-					g_d3d_pp.BackBufferWidth = low_order < unsigned short, LPARAM >( l_param );
+					g_d3d_pp.BackBufferWidth  = low_order < unsigned short, LPARAM >( l_param );
 					g_d3d_pp.BackBufferHeight = high_order< unsigned short, LPARAM >( l_param );
 					reset_device();
 				}
@@ -210,7 +210,7 @@ namespace easy_di
 		}
 		~impl_window()
 		{
-			if( !UnregisterClassA( this->m_window_class.lpszClassName, this->m_window_class.hInstance ) )
+			if ( !UnregisterClassA( this->m_window_class.lpszClassName, this->m_window_class.hInstance ) )
 				TraceLog( "UnregisterClassA returned 0!" );
 
 			this->m_hwnd = nullptr;
@@ -229,6 +229,49 @@ namespace easy_di
 	{
 	protected:
 		bool m_vsync;
+
+		impl_imgui
+		(
+			const std::string &window_name,
+			const std::string &class_name,
+			const vec2 &window_pos,
+			const vec2 &window_size,
+			const uint32_t class_style,
+			const uint32_t window_style,
+			const bool vsync
+		) :
+			impl_window
+		{
+			window_name,
+			class_name,
+			window_pos,
+			window_size,
+			class_style,
+			window_style
+		},
+			m_vsync{ vsync }
+		{
+			if ( this->m_hwnd )
+			{
+				if ( !create_device() )
+					TraceLog( "create_device returned false.\n" );
+			}
+		}
+
+		~impl_imgui()
+		{
+			// ImGui does not check if the context is valid when cleaning, so it will try to access memory on a null pointer.
+			//
+			if ( ImGui::GetCurrentContext() )
+			{
+				ImGui_ImplDX9_Shutdown();
+				ImGui_ImplWin32_Shutdown();
+
+				ImGui::DestroyContext();
+			}
+
+			clear_device();
+		}
 
 		void clear_device()
 		{
@@ -283,49 +326,6 @@ namespace easy_di
 				if ( !ImGui_ImplDX9_Init( dx::g_ptr_d3d_device ) )
 					TraceLog( "ImGui_ImplDX9_Init returned false.\n" );
 			}
-		}
-
-		impl_imgui
-		(
-			const std::string &window_name,
-			const std::string &class_name,
-			const vec2 &window_pos,
-			const vec2 &window_size,
-			const uint32_t class_style,
-			const uint32_t window_style,
-			const bool vsync
-		) :
-			impl_window
-		{
-			window_name,
-			class_name,
-			window_pos,
-			window_size,
-			class_style,
-			window_style
-		},
-			m_vsync{ vsync }
-		{
-			if ( this->m_hwnd )
-			{
-				if ( !create_device() )
-					TraceLog( "create_device returned false.\n" );
-			}
-		}
-
-		~impl_imgui()
-		{
-			// ImGui does not check if the context is valid when cleaning, so it will try to access memory on a null pointer.
-			//
-			if ( ImGui::GetCurrentContext() )
-			{
-				ImGui_ImplDX9_Shutdown();
-				ImGui_ImplWin32_Shutdown();
-
-				ImGui::DestroyContext();
-			}
-
-			clear_device();
 		}
 
 	public:
@@ -390,6 +390,7 @@ namespace easy_di
 			const std::string &class_name,
 			const vec2 &window_pos,
 			const vec2 &window_size,
+			const uint32_t cmd_show = SW_SHOW,
 			const uint32_t class_style = CS_CLASSDC,
 			const uint32_t window_style = WS_OVERLAPPEDWINDOW,
 			const bool vsync = true
@@ -406,7 +407,7 @@ namespace easy_di
 		},
 			m_msg{ 0 }
 		{
-			ShowWindow( this->m_hwnd, SW_SHOWMAXIMIZED );
+			ShowWindow( this->m_hwnd, cmd_show );
 			UpdateWindow( this->m_hwnd );
 
 			imgui_init_context();

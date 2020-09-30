@@ -10,7 +10,7 @@
 * [Special thanks](https://github.com/theluc4s/easy-dear-imgui#special-thanks)
 
 ## Design goals
-There are several variants for implementing dear imgui using C++. Each project has its implementation. My class has the following goals:
+There are several variants for implementing [Dear ImGui](https://github.com/ocornut/imgui/) using C++. Each project has its implementation. My class has the following goals:
 
 ###### Single-header integration:
 The class was built in a single header and is not linked to dependencies.
@@ -43,6 +43,7 @@ int __stdcall WinMain(
 		"my_window",         // Class window name
 		{ 0, 0 },            // Start position window
 		{ 1280, 720 },       // Start size window
+		SW_SHOW,             // Window show state       ( default parameter )	
 		CS_CLASSDC,          // Window class style      ( default parameter )
 		WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
 		true                 // Vertical sincronization ( default parameter )
@@ -109,6 +110,7 @@ easy_di::window window
 	"my_window",         // Class window name
 	{ 0, 0 },            // Start position window
 	{ 1280, 720 },       // Start size window
+	SW_SHOW,             // Window show state       ( default parameter )
 	CS_CLASSDC,          // Window class style      ( default parameter )
 	WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
 	true                 // Vertical sincronization ( default parameter )
@@ -125,7 +127,7 @@ The following functions are available:
 | `bool imgui_start_frame()` | **Creates a dear imgui frame.** |
 | `bool imgui_end_frame()` | **Ends a dear imgui frame.** |
 | `void set_background_color(int,int,int)` | **Define a new background color** |
-| `bool get_vsync_state()` | **Returns the state of vertical synchronization.** |
+| `bool get_vsync_state() const` | **Returns the state of vertical synchronization.** |
 | `MSG& get_msg()` | **Returns a reference to m_msg** |
 
 ## Special thanks

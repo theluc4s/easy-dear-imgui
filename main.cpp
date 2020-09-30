@@ -16,6 +16,7 @@ int __stdcall WinMain(
 		"my_window",         // Class window name
 		{ 0, 0 },            // Start position window
 		{ 1280, 720 },       // Start size window
+		SW_SHOW,             // Window show state       ( default parameter )
 		CS_CLASSDC,          // Window class style      ( default parameter )
 		WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
 		true                 // Vertical sincronization ( default parameter )
