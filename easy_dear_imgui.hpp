@@ -15,61 +15,72 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler( HWND hWnd, UINT ms
 
 namespace easy_di
 {
-#define TraceLog(format, ...) TraceLogImpl( __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__)
-	std::string get_last_error_as_string( const int error_code )
+	namespace log
 	{
-		char *buffer{ nullptr };
-		const auto msg = FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
-										 nullptr, // (not used with FORMAT_MESSAGE_FROM_SYSTEM)
-										 error_code,
-										 MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-										 reinterpret_cast< LPTSTR >( &buffer ),
-										 0,
-										 nullptr );
-		if ( msg > 0 )
+#define log(format, ...) trace_impl( __FILE__, __LINE__, __FUNCTION__, format, __VA_ARGS__ )
+
+		std::string get_last_error_as_string( const int error_code )
 		{
-			// Assign buffer to smart pointer with custom deleter so that memory gets released
-			// in case String's c'tor throws an exception.
-			auto deleter = [] ( void *p ) { LocalFree( p ); };
-			std::unique_ptr<char, decltype( deleter )> ptrBuffer( buffer, deleter );
-			return std::string( ptrBuffer.get(), msg );
-		}
-		else
-		{
-			auto error_code{ GetLastError() };
-			return std::system_error( error_code, std::system_category(),
+			char *buffer{ nullptr };
+
+			const auto msg{ FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_ALLOCATE_BUFFER,
+											nullptr, // (not used with FORMAT_MESSAGE_FROM_SYSTEM)
+											error_code,
+											MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+											reinterpret_cast< LPSTR >( &buffer ),
+											0,
+											nullptr ) };
+			if ( msg > 0 )
+			{
+				auto deleter{ []( void *ptr )
+				{
+					LocalFree( ptr );
+				} };
+
+				const std::unique_ptr< char, decltype( deleter ) > message{ buffer, deleter };
+
+				return message.get();
+			}
+
+			return std::system_error( GetLastError(), std::system_category(),
 									  "Failed to retrieve error message string.\n" ).what();
 		}
-	}
 
-	void TraceLogImpl( const char *file_name, const int line, const char *func_sig, const char *format, ... )
-	{
-		char buffer[ 512 ]{};
+		void trace_impl( const char *file_name, const int line, const char *func_sig, const char *format, ... )
+		{
+			// Format example:
+			// https://docs.microsoft.com/en-us/cpp/build/reference/fc-full-path-of-source-code-file-in-diagnostics?view=vs-2019
+			// [10] File: dummy.cpp
+			// [10] Func: dummy_foo
+			// [10] GetLastError: [0] - The operation completed successfully.
+			// [10] Reason: nullptr argument
+			//
 
-		//Format example:
-		//https://docs.microsoft.com/en-us/cpp/build/reference/fc-full-path-of-source-code-file-in-diagnostics?view=vs-2019
-		//[10] File: dummy.cpp
-		//[10] Func: dummy_foo
-		//[10] GetLastError: [0] - The operation completed successfully.
-		//[10] Reason: nullptr argument
+			static constexpr auto buffer_size{ 1024u };
+			auto buffer{ std::make_unique< char[] >( buffer_size ) };
 
-		const auto error_code{ GetLastError() };
-		const auto format_msg{ get_last_error_as_string( error_code ) };
+			const auto error_code{ GetLastError() };
 
-		sprintf_s( buffer, "[%d] File: %s\n[%d] Func: %s\n[%d] GetLastError: [%d] - %s[%d] Reason: ",
-				   line, file_name,
-				   line, func_sig,
-				   line, error_code, format_msg.data(),
-				   line );
+			snprintf( buffer.get(), buffer_size,
+					  "[%d] File: %s\n[%d] Func: %s\n[%d] GetLastError: [%d] - %s[%d] Reason: ",
+					  line, file_name,
+					  line, func_sig,
+					  line, error_code, get_last_error_as_string( error_code ).data(),
+					  line );
 
-		OutputDebugStringA( buffer );
+			OutputDebugStringA( buffer.get() );
 
-		//retrieve the variable arguments
-		va_list args{};
-		va_start( args, format );
-		vsprintf_s( buffer, format, args );
-		OutputDebugStringA( buffer );
-		va_end( args );
+			// retrieve the variable arguments
+			//
+			va_list args{};
+			va_start( args, format );
+
+			vsnprintf( buffer.get(), buffer_size, format, args );
+
+			OutputDebugStringA( buffer.get() );
+
+			va_end( args );
+		}
 	}
 
 	struct vec2
@@ -103,11 +114,13 @@ namespace easy_di
 	{
 		using wnd_proc_t = LRESULT( __stdcall * )( HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param );
 
-		//Use a different processing window of your own.
-		//Don't forget to check ImGui_ImplWin32_WndProcHandler ( return 1 ) and call reset_device in the case WM_SIZE.
+		// Use a different processing window of your own.
+		// Don't forget to check ImGui_ImplWin32_WndProcHandler ( return 1 ) and call reset_device in the case WM_SIZE.
+		//
 		static wnd_proc_t               g_cwnd_proc{ nullptr };
 
-		//Create Microsoft Direct3D objects and set up the environment
+		// Create Microsoft Direct3D objects and set up the environment
+		//
 		static LPDIRECT3D9              g_ptr_d3d{ nullptr };
 		static LPDIRECT3DDEVICE9        g_ptr_d3d_device{ nullptr };
 		static D3DPRESENT_PARAMETERS    g_d3d_pp{ 0 };
@@ -115,9 +128,10 @@ namespace easy_di
 		static void reset_device()
 		{
 			ImGui_ImplDX9_InvalidateDeviceObjects();
-			const auto hr_reset{ g_ptr_d3d_device->Reset( &g_d3d_pp ) };
-			if ( hr_reset == D3DERR_INVALIDCALL )
+
+			if ( g_ptr_d3d_device->Reset( &g_d3d_pp ) == D3DERR_INVALIDCALL )
 				IM_ASSERT( 0 );
+
 			ImGui_ImplDX9_CreateDeviceObjects();
 		}
 
@@ -128,22 +142,30 @@ namespace easy_di
 
 			switch ( msg )
 			{
-			case WM_DESTROY:
-				PostQuitMessage( 0 );
-				return 0;
-			case WM_CLOSE:
-				DestroyWindow( hwnd );
-				return 0;
-			case WM_SIZE:
-				if ( g_ptr_d3d_device && ( w_param != SIZE_MINIMIZED ) )
-				{
-					g_d3d_pp.BackBufferWidth  = low_order < unsigned short, LPARAM >( l_param );
-					g_d3d_pp.BackBufferHeight = high_order< unsigned short, LPARAM >( l_param );
-					reset_device();
-				}
-				return 0;
+				case WM_DESTROY:
+					PostQuitMessage( 0 );
+					return 0;
+				case WM_CLOSE:
+					DestroyWindow( hwnd );
+					return 0;
+				case WM_SIZE:
+					if ( g_ptr_d3d_device && ( w_param != SIZE_MINIMIZED ) )
+					{
+						g_d3d_pp.BackBufferWidth = low_order < unsigned short, LPARAM >( l_param );
+						g_d3d_pp.BackBufferHeight = high_order< unsigned short, LPARAM >( l_param );
+						reset_device();
+					}
+					return 0;
 			}
 			return DefWindowProcA( hwnd, msg, w_param, l_param );
+		}
+	}
+
+	namespace utils
+	{
+		HICON icon( const int id_icon, const vec2& size, const int fu_load = LR_DEFAULTCOLOR )
+		{
+			return static_cast< HICON >( LoadImageA( GetModuleHandleA( nullptr ), MAKEINTRESOURCE( id_icon ), IMAGE_ICON, size.m_x, size.m_y, fu_load ) );
 		}
 	}
 
@@ -161,8 +183,10 @@ namespace easy_di
 			const std::string &class_name,                              // Window class name
 			const vec2 &window_pos,                                     // Window start position
 			const vec2 &window_size,                                    // Window start size
-			const uint32_t class_style,
-			const uint32_t window_style
+			const uint32_t class_style,                                 // Class window style
+			const uint32_t window_style,								// Window style
+			const HICON icon,											// Icon
+			const HICON small_icon										// Small icon
 		) :
 			m_hwnd{ nullptr },
 			m_window_name{ window_name },
@@ -176,12 +200,12 @@ namespace easy_di
 				0,
 				0,
 				GetModuleHandleA( nullptr ),                            // Should be equivalent to the instance passed into WinMain
-				nullptr,
+				icon,                                                   // Icon
 				nullptr,
 				nullptr,
 				nullptr,
 				m_class_name.data(),                                    // Window class name
-				nullptr
+				small_icon                                              // Small icon
 			};
 
 			if ( RegisterClassExA( &this->m_window_class ) )
@@ -202,16 +226,16 @@ namespace easy_di
 					nullptr
 				);
 
-				if ( !this->m_hwnd )
-					TraceLog( "Handle is nullptr. CreateWindowExA failed!\n" );
+				if ( this->m_hwnd )
+					log::log( "Handle is nullptr. CreateWindowExA failed!\n" );
 			}
 			else
-				TraceLog( "RegisterClassExA returned 0!\n" );
+				log::log( "RegisterClassExA returned 0!\n" );
 		}
 		~impl_window()
 		{
 			if ( !UnregisterClassA( this->m_window_class.lpszClassName, this->m_window_class.hInstance ) )
-				TraceLog( "UnregisterClassA returned 0!" );
+				log::log( "UnregisterClassA returned 0!" );
 
 			this->m_hwnd = nullptr;
 			this->m_window_class = { 0 };
@@ -238,6 +262,8 @@ namespace easy_di
 			const vec2 &window_size,
 			const uint32_t class_style,
 			const uint32_t window_style,
+			const HICON icon,
+			const HICON small_icon,
 			const bool vsync
 		) :
 			impl_window
@@ -247,14 +273,16 @@ namespace easy_di
 			window_pos,
 			window_size,
 			class_style,
-			window_style
+			window_style,
+			icon,
+			small_icon
 		},
 			m_vsync{ vsync }
 		{
 			if ( this->m_hwnd )
 			{
 				if ( !create_device() )
-					TraceLog( "create_device returned false.\n" );
+					log::log( "create_device returned false.\n" );
 			}
 		}
 
@@ -313,7 +341,7 @@ namespace easy_di
 				if ( ImGui::CreateContext() )
 					ImGui::StyleColorsDark();
 				else
-					TraceLog( "CreateContext returned nullptr.\n" );
+					log::log( "CreateContext returned nullptr.\n" );
 			}
 		}
 
@@ -322,9 +350,9 @@ namespace easy_di
 			if ( this->m_hwnd && dx::g_ptr_d3d_device && ImGui::GetCurrentContext() )
 			{
 				if ( !ImGui_ImplWin32_Init( this->m_hwnd ) )
-					TraceLog( "ImGui_ImplWin32_Init returned false.\n" );
+					log::log( "ImGui_ImplWin32_Init returned false.\n" );
 				if ( !ImGui_ImplDX9_Init( dx::g_ptr_d3d_device ) )
-					TraceLog( "ImGui_ImplDX9_Init returned false.\n" );
+					log::log( "ImGui_ImplDX9_Init returned false.\n" );
 			}
 		}
 
@@ -365,7 +393,10 @@ namespace easy_di
 			}
 		}
 
-		bool get_vsync_state() const { return m_vsync; }
+		bool get_vsync_state() const
+		{
+			return m_vsync;
+		}
 
 		void set_background_color( const int r = 105, const int g = 105, const int b = 105 )
 		{
@@ -393,6 +424,8 @@ namespace easy_di
 			const uint32_t cmd_show = SW_SHOW,
 			const uint32_t class_style = CS_CLASSDC,
 			const uint32_t window_style = WS_OVERLAPPEDWINDOW,
+			const HICON icon = nullptr,
+			const HICON small_icon = nullptr,
 			const bool vsync = true
 		) :
 			impl_imgui
@@ -403,6 +436,8 @@ namespace easy_di
 			window_size,
 			class_style,
 			window_style,
+			icon,
+			small_icon,
 			vsync
 		},
 			m_msg{ 0 }
@@ -435,6 +470,9 @@ namespace easy_di
 			return true;
 		}
 
-		MSG &get_msg() { return m_msg; }
+		MSG &get_msg()
+		{
+			return m_msg;
+		}
 	};
 }

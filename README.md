@@ -26,8 +26,6 @@ Get the [latest ImGui release](https://github.com/ocornut/imgui/releases/) and d
 #### Visual Studio 2019
 main.cpp
 ```cpp
-#include "easy_dear_imgui.hpp"
-
 int __stdcall WinMain(
 	_In_ HINSTANCE,
 	_In_opt_ HINSTANCE,
@@ -39,17 +37,22 @@ int __stdcall WinMain(
 	//
 	easy_di::window window
 	{
-		"My Window",         // Window name
-		"my_window",         // Class window name
-		{ 0, 0 },            // Start position window
-		{ 1280, 720 },       // Start size window
-		SW_SHOW,             // Window show state       ( default parameter )	
-		CS_CLASSDC,          // Window class style      ( default parameter )
-		WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
-		true                 // Vertical sincronization ( default parameter )
+		"My Window",                                                  // Window name
+		"my_window",                                                  // Class window name
+		{ 0, 0 },                                                     // Start position window
+		{ 1280, 720 },                                                // Start size window
+		SW_SHOW,                                                      // Window show state       ( default parameter = SW_SHOW )
+		CS_CLASSDC,                                                   // Window class style      ( default parameter = CS_CLASSDC )
+		WS_OVERLAPPEDWINDOW,                                          // Window style            ( default parameter = WS_OVERLAPPEDWINDOW )
+		// A wrapper for adding an icon has been added (add the icon to your project's resource and use your ID)
+		//
+		easy_di::utils::icon( 0 /*RESOURCE ICON ID*/, { 128, 128 } ), // Icon                    ( default parameter = nullptr )
+		easy_di::utils::icon( 0 /*RESOURCE ICON ID*/, { 16, 16 } ),   // Small icon              ( default parameter = nullptr )
+		true                                                          // Vertical sincronization ( default parameter = true )
 	};
 
-	//If process_message() returns false, the message was equal to WM_QUIT or CreateWindowExA failed and returned a nullptr handle.
+	// If process_message() returns false, the message was equal to WM_QUIT or CreateWindowExA failed and returned a nullptr handle.
+	//
 	while ( window.process_message() )
 	{
 		if ( window.imgui_start_frame() )
@@ -61,8 +64,6 @@ int __stdcall WinMain(
 
 		window.set_background_color();
 	}
-
-	return 0;
 }
 ```
 #### Screenshot
@@ -70,6 +71,7 @@ int __stdcall WinMain(
 
 #### Custom window procedure template
 If you want to use a custom window procedure, use the template below and write your own.
+
 ```cpp
 LRESULT __stdcall custom_wnd_procedure( HWND hwnd, UINT msg, WPARAM w_param, LPARAM l_param )
 {
@@ -99,25 +101,29 @@ LRESULT __stdcall custom_wnd_procedure( HWND hwnd, UINT msg, WPARAM w_param, LPA
 	return DefWindowProcA( hwnd, msg, w_param, l_param );
 }
 ```
+
 Then just define g_cwnd_proc before creating the object.
 ```cpp
-//before create the object
+// before create the object
+//
 easy_di::dx::g_cwnd_proc = custom_wnd_procedure;
-//create the object
+
+// create the object
+//
 easy_di::window window
 {
-	"My Window",         // Window name
-	"my_window",         // Class window name
-	{ 0, 0 },            // Start position window
-	{ 1280, 720 },       // Start size window
-	SW_SHOW,             // Window show state       ( default parameter )
-	CS_CLASSDC,          // Window class style      ( default parameter )
-	WS_OVERLAPPEDWINDOW, // Window style            ( default parameter )
-	true                 // Vertical sincronization ( default parameter )
+	"My Window",                                                  // Window name
+	"my_window",                                                  // Class window name
+	{ 0, 0 },                                                     // Start position window
+	{ 1280, 720 },                                                // Start size window
+	SW_SHOW,                                                      // Window show state       ( default parameter = SW_SHOW )
+	CS_CLASSDC,                                                   // Window class style      ( default parameter = CS_CLASSDC )
+	WS_OVERLAPPEDWINDOW,                                          // Window style            ( default parameter = WS_OVERLAPPEDWINDOW )
+	easy_di::utils::icon( 0 /*RESOURCE ICON ID*/, { 128, 128 } ), // Icon                    ( default parameter = nullptr )
+	easy_di::utils::icon( 0 /*RESOURCE ICON ID*/, { 16, 16 } ),   // Small icon              ( default parameter = nullptr )
+	true                                                          // Vertical sincronization ( default parameter = true )
 };
 ```
-
-
 ## User functions
 The following functions are available:
 
